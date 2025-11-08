@@ -136,6 +136,7 @@ app.get("/api/routes", async (req, res) => {
 });
 
 app.get("/api/key", (req, res) => {
+  console.log("API Key requested");
   res.json({ key: process.env.GOOGLE_API_KEY });
 });
 
