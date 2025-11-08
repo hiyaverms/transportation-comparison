@@ -1,13 +1,16 @@
+let map, geocoder;
+let startMarker, endMarker;
+let currentPolyline = null; // to remove old route
+
+// Load Google Maps with callback to initMap
 async function loadMap() {
   try {
     const res = await fetch("http://localhost:8080/api/key");
     const data = await res.json();
     const GOOGLE_API_KEY = data.key;
-    console.log("Fetched Google API Key:", GOOGLE_API_KEY);
 
     const script = document.createElement("script");
-    console.log("attempting to use: ", GOOGLE_API_KEY);
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initMap&libraries=geometry`;
     script.async = true;
     script.defer = true;
     document.head.appendChild(script);
@@ -16,11 +19,49 @@ async function loadMap() {
   }
 }
 
-// Kick it off
-loadMap();
+// Called whenever start/end markers move or change
+async function handleRouteChange() {
+  if (!startMarker || !endMarker) return;
 
-let map, geocoder;
-let startMarker, endMarker;
+  const origin = startMarker.getPosition();
+  const destination = endMarker.getPosition();
+
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/routes?origin=${origin.lat()},${origin.lng()}&destination=${destination.lat()},${destination.lng()}`
+    );
+    const routes = await response.json();
+    if (routes.length === 0) {
+      console.warn("No routes returned from backend");
+      return;
+    }
+    displayRoute("{nqaGj~{pLSp@IXIVABa@xAm@tBGPo@|BABIVK^Od@IZK\\GPIX]lAGVCHIV?@ABM`@K\\IX{@vCGREJK^GVADITK^Mb@CNEHKV?@?@ABm@tBIPKVAFCDADa@xACHENCLABs@fCADELEPELCJ?@a@vAK\\[bAc@zAi@fB[dAk@rBOd@GT]hAADIXY`AKZg@dBGRK\\{@tC[dAw@nCCFk@lBUv@Sr@CHGPc@vAEP");
+  } catch (err) {
+    console.error("Failed to fetch routes:", err);
+  }
+}
+
+// Draw the polyline on the map
+function displayRoute(encodedPolyline) {
+  if (!encodedPolyline) {
+    console.warn("No polyline available for this route");
+    return;
+  }
+
+  // Remove old polyline if exists
+  if (currentPolyline) currentPolyline.setMap(null);
+
+  const path = google.maps.geometry.encoding.decodePath(encodedPolyline);
+  currentPolyline = new google.maps.Polyline({
+    path,
+    geodesic: true,
+    strokeColor: "#FF0000",
+    strokeOpacity: 0.8,
+    strokeWeight: 5,
+  });
+
+  currentPolyline.setMap(map);
+}
 
 function initMap() {
   const boston = { lat: 42.3601, lng: -71.0589 };
@@ -28,61 +69,59 @@ function initMap() {
 
   map = new google.maps.Map(document.getElementById("map"), {
     zoom: 13,
-    center: boston
+    center: boston,
   });
 
   geocoder = new google.maps.Geocoder();
 
-  // Create draggable markers
+  // Draggable markers
   startMarker = new google.maps.Marker({ position: boston, map, draggable: true });
   endMarker = new google.maps.Marker({ position: cambridge, map, draggable: true });
 
-  // Update route and locations when dragged
-  startMarker.addListener("dragend", () => { 
+  // Event listeners
+  startMarker.addListener("dragend", () => {
     updateLocation(startMarker, "start-location");
- });
-  endMarker.addListener("dragend", () => { 
-    updateLocation(endMarker, "end-location"); 
-});
-
-  // Initial route and locations
-  updateLocation(startMarker, "start-location");
-  updateLocation(endMarker, "end-location");
+    handleRouteChange();
+  });
+  endMarker.addListener("dragend", () => {
+    updateLocation(endMarker, "end-location");
+    handleRouteChange();
+  });
 
   // Input boxes
   const startInput = document.getElementById("start-input");
   const endInput = document.getElementById("end-input");
 
-  startInput.addEventListener("change", () => { geocodeAddress(startInput.value, startMarker, "start-location"); });
-  endInput.addEventListener("change", () => { geocodeAddress(endInput.value, endMarker, "end-location"); });
+  startInput.addEventListener("change", () => geocodeAddress(startInput.value, startMarker, "start-location"));
+  endInput.addEventListener("change", () => geocodeAddress(endInput.value, endMarker, "end-location"));
+
+  // Initial locations + route
+  updateLocation(startMarker, "start-location");
+  updateLocation(endMarker, "end-location");
+  handleRouteChange();
 }
 
 function updateLocation(marker, elementId) {
-  geocoder.geocode({ location: marker.getPosition() },
-    (results, status) => {
-      let display;
-      if (status === "OK" && results[0]) {
-        display = results[0].formatted_address;
-      } else {
-        display = marker.getPosition().toUrlValue(6); // fallback to "lat,lng"
-      }
-      document.getElementById(elementId).textContent = display;
-    }
-  );
+  geocoder.geocode({ location: marker.getPosition() }, (results, status) => {
+    const display = status === "OK" && results[0] ? results[0].formatted_address : marker.getPosition().toUrlValue(6);
+    document.getElementById(elementId).textContent = display;
+  });
 }
 
 function geocodeAddress(address, marker, elementId) {
-  geocoder.geocode({ address: address }, (results, status) => {
+  geocoder.geocode({ address }, (results, status) => {
     if (status === "OK" && results[0]) {
       const location = results[0].geometry.location;
       marker.setPosition(location);
       map.panTo(location);
       updateLocation(marker, elementId);
+      handleRouteChange();
     } else {
       alert("Address not found: " + status);
     }
   });
 }
 
-// Important for Google Maps callback to find initMap
+// Kick it off
+loadMap();
 window.initMap = initMap;

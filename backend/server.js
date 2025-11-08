@@ -79,7 +79,7 @@ app.get("/api/routes", async (req, res) => {
           duration_min: (leg.duration.value / 60) * durationMultiplier,
           duration_with_traffic_min: hasTrafficData ? (baseDuration / 60) * durationMultiplier : null,
           carbon_kg: (leg.distance.value / 1000) * (EMISSIONS_FACTORS[mode] || 0),
-          polyline,
+          polyline: route.overview_polyline?.points || "", // add this
           bounds,
           has_traffic_data: hasTrafficData
         });
