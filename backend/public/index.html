@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Draggable Route + Input Addresses</title>
+    <style>
+        /* Wrap both map and overlays */
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+            font-family: sans-serif;
+        }
+
+        #info-panel input {
+            width: 200px;
+            margin-bottom: 5px;
+        }
+
+
+        #transport-panel {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            font-family: "Roboto", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            z-index: 10;
+            width: 300px;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        #transport-panel.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+        }
+
+        /* Toggle button styling */
+        #toggle-transport {
+            position: absolute;
+            top: 20px;
+            right: 10px;
+            background: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 11;
+            transition: background 0.2s ease;
+        }
+
+        #toggle-overlay:hover {
+            background: #005fcc;
+        }
+
+        /* ========== GEMINI CHAT STYLING (EASY TO REMOVE) ========== */
+        #chat-panel {
+            position: absolute;
+            bottom: 80px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            font-family: "Roboto", sans-serif;
+            font-size: 14px;
+            z-index: 15;
+            width: 350px;
+            max-height: 400px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        #chat-panel.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+        }
+
+        #chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            max-height: 250px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .chat-message {
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 85%;
+        }
+
+        .chat-message.user {
+            background: #0078ff;
+            color: white;
+            margin-left: auto;
+        }
+
+        .chat-message.ai {
+            background: #e3f2fd;
+            color: #333;
+        }
+
+        #chat-input-container {
+            display: flex;
+            gap: 8px;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #0078ff;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        #chat-send {
+            padding: 10px 16px;
+            background: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #chat-send:hover {
+            background: #005fcc;
+        }
+
+        #chat-send:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        #toggle-chat {
+            position: absolute;
+            bottom: 490px;
+            left: 10px;
+            background: #00C853;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 16;
+            transition: background 0.2s ease;
+        }
+
+        #toggle-chat:hover {
+            background: #00A043;
+        }
+        /* ========== END GEMINI CHAT STYLING ========== */
+    </style>
+</head>
+<body>
+<div id="map-container">
+    <div id="map"></div>
+
+  
+  <div id="info-panel">
+        <div>
+            <label>Start: </label>
+            <input id="start-input" placeholder="Enter start location" />
+        </div>
+        <div>
+            <label>End: </label>
+            <input id="end-input" placeholder="Enter end location" />
+        </div>
+            <p><strong>Current Start:</strong> <span id="start-location"></span></p>
+            <p><strong>Current End:</strong> <span id="end-location"></span></p>
+        </div>
+
+
+    <div id="transport-panel">
+        <h3>Options</h3>
+        <div id="transport-info">Loading transport options...</div>
+    </div>
+        <button id="toggle-transport">Hide Options</button>
+    </div>
+
+  <div id="directions-panel"></div>
+
+  <!-- ========== GEMINI CHAT UI (EASY TO REMOVE) ========== -->
+  <div id="chat-panel" class="hidden">
+    <h3 style="margin: 0 0 12px 0;">🌍 Travel Assistant</h3>
+    <div id="chat-messages">
+      <div class="chat-message ai">
+        Hi! I'm your travel assistant. Ask me about the best travel times, emissions savings, or which route to take!
+      </div>
+    </div>
+    <div id="chat-input-container">
+      <input
+        type="text"
+        id="chat-input"
+        placeholder="Ask me anything about your routes..."
+        onkeypress="if(event.key === 'Enter') sendChatMessage()"
+      />
+      <button id="chat-send" onclick="sendChatMessage()">Send</button>
+    </div>
+  </div>
+  <button id="toggle-chat" onclick="toggleChat()">Travel Assistant</button>
+  <!-- ========== END GEMINI CHAT UI ========== -->
+
+  <!-- Load your JavaScript code -->
+  <script src="script.js"></script>
+</body>
+</html>

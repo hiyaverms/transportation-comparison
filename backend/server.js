@@ -158,9 +158,7 @@ app.get("/api/routes", async (req, res) => {
       }
     }
 
-
-
-    res.json(results);
+    res.json({ routes: results, suggestion });
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ error: "Failed to fetch route data" });
