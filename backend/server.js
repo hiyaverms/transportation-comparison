@@ -36,14 +36,14 @@ const MODES = [
 
 
 const EMISSIONS_FACTORS = {
-  driving: 0.18,
-  bus: 0.13,
-  tram: 0.11,
-  subway: 0.10, 
+  driving: 0.22,
+  bus: 0.16,
+  tram: 0.09,
+  subway: 0.08, 
   bicycling: 0.0,
   walking: 0.0,
-  "e-bike": 0.024,
-  "e-scooter": 0.12 
+  "e-bike": 0.01,
+  "e-scooter": 0.08 
 };
 
 
