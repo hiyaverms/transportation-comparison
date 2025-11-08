@@ -40,8 +40,8 @@ const EMISSIONS_FACTORS = {
   subway: 0.08, 
   bicycling: 0.0,
   walking: 0.0,
-  "e-bike": 0.024,
-  "e-scooter": 0.12 
+  "e-bike": 0.01,
+  "e-scooter": 0.08 
 };
 
 
