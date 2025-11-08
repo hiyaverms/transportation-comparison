@@ -32,7 +32,11 @@ function initMap() {
   });
 
   directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({ map: map, suppressMarkers: true });
+  directionsRenderer = new google.maps.DirectionsRenderer({
+    map: map, 
+    suppressMarkers: true,
+    panel: document.getElementById("directions-panel")
+});
   geocoder = new google.maps.Geocoder();
 
   // Create draggable markers
