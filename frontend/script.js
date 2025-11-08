@@ -203,6 +203,14 @@ toggleButton.addEventListener('click', () => {
   toggleButton.textContent = isHidden ? 'Show Directions' : 'Hide Directions';
 });
 
+const transport = document.getElementById('transport-panel');
+const toggleTransport = document.getElementById('toggle-transport');
+
+toggleTransport.addEventListener('click', () => {
+  const isHidden = transport.classList.toggle('hidden');
+  toggleTransport.textContent = isHidden ? 'Show Options' : 'Hide Options';
+});
+
 // Kick it off
 loadMap();
 window.initMap = initMap;
