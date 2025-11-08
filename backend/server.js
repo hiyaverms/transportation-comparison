@@ -38,7 +38,7 @@ app.get("/api/routes", async (req, res) => {
     const results = [];
 
     for (const mode of MODES) {
-      // e-bike & e-scooter by use driving
+      // e-bike & e-scooter use driving
       const actualMode = ["e-bike", "e-scooter"].includes(mode) ? "driving" : mode;
 
       const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${actualMode}&key=${GOOGLE_API_KEY}`;
