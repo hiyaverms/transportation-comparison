@@ -15,13 +15,13 @@ const PORT = 8080;
 
 const MODES = ["driving", "transit", "bicycling", "walking", "e-bike", "e-scooter"];
 
-const EMISSIONS_FACTORS = { // need to find kg CO2 per km
-  driving: 0.192,    
-  transit: 0.089,
-  bicycling: 0.0,
+const EMISSIONS_FACTORS = { 
+  driving: 0.18,    
+  transit: 1.3,
+  bicycling: 0.021,
   walking: 0.0,
-  "e-bike": 0.015, 
-  "e-scooter": 0.021
+  "e-bike": 0.024, 
+  "e-scooter": 0.12
 };
 
 app.get("/", (req, res) => {
