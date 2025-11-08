@@ -23,7 +23,7 @@ const EMISSIONS_FACTORS = { //need to update
 };
 
 app.get("/", (req, res) => {
-  res.json({ message: "Transport Compare API is running 👍" });
+  res.json({ message: "Transport Compare API is running" });
 });
 
 app.get("/api/routes", async (req, res) => {
