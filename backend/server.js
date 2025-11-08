@@ -68,4 +68,8 @@ app.get("/api/routes", async (req, res) => {
   }
 });
 
+app.get("/api/key", (req, res) => {
+  res.json({ key: process.env.GOOGLE_API_KEY });
+});
+
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
