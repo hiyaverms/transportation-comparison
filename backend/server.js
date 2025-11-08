@@ -11,6 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+const PORT = process.env.PORT || 3000;
 
 const MODES = ["driving", "transit", "bicycling", "walking"];
 
