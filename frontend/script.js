@@ -129,6 +129,14 @@ function geocodeAddress(address, marker, elementId) {
   });
 }
 
+const overlay = document.getElementById('overlay-panel');
+const toggleButton = document.getElementById('toggle-overlay');
+
+toggleButton.addEventListener('click', () => {
+  const isHidden = overlay.classList.toggle('hidden');
+  toggleButton.textContent = isHidden ? 'Show Directions' : 'Hide Directions';
+});
+
 // Kick it off
 loadMap();
 window.initMap = initMap;
