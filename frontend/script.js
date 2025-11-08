@@ -19,7 +19,7 @@ async function loadMap() {
 // Kick it off
 loadMap();
 
-let map, directionsService, directionsRenderer, geocoder;
+let map, geocoder;
 let startMarker, endMarker;
 
 function initMap() {
@@ -31,12 +31,6 @@ function initMap() {
     center: boston
   });
 
-  directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({
-    map: map, 
-    suppressMarkers: true,
-    panel: document.getElementById("directions-panel")
-});
   geocoder = new google.maps.Geocoder();
 
   // Create draggable markers
@@ -44,11 +38,14 @@ function initMap() {
   endMarker = new google.maps.Marker({ position: cambridge, map, draggable: true });
 
   // Update route and locations when dragged
-  startMarker.addListener("dragend", () => { calculateRoute(); updateLocation(startMarker, "start-location"); });
-  endMarker.addListener("dragend", () => { calculateRoute(); updateLocation(endMarker, "end-location"); });
+  startMarker.addListener("dragend", () => { 
+    updateLocation(startMarker, "start-location");
+ });
+  endMarker.addListener("dragend", () => { 
+    updateLocation(endMarker, "end-location"); 
+});
 
   // Initial route and locations
-  calculateRoute();
   updateLocation(startMarker, "start-location");
   updateLocation(endMarker, "end-location");
 
@@ -58,17 +55,6 @@ function initMap() {
 
   startInput.addEventListener("change", () => { geocodeAddress(startInput.value, startMarker, "start-location"); });
   endInput.addEventListener("change", () => { geocodeAddress(endInput.value, endMarker, "end-location"); });
-}
-
-function calculateRoute() {
-  directionsService.route({
-    origin: startMarker.getPosition(),
-    destination: endMarker.getPosition(),
-    travelMode: google.maps.TravelMode.DRIVING
-  }, (result, status) => {
-    if (status === "OK") directionsRenderer.setDirections(result);
-    else console.error("Directions request failed:", status);
-  });
 }
 
 function updateLocation(marker, elementId) {
@@ -92,7 +78,6 @@ function geocodeAddress(address, marker, elementId) {
       marker.setPosition(location);
       map.panTo(location);
       updateLocation(marker, elementId);
-      calculateRoute();
     } else {
       alert("Address not found: " + status);
     }
