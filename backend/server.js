@@ -55,7 +55,7 @@ app.get("/api/routes", async (req, res) => {
         });
       }
     }
-      
+
 
     res.json(results);
   } catch (err) {
