@@ -29,11 +29,11 @@ const EMISSIONS_FACTORS = {
   driving: 0.18,
   bus: 0.13,
   tram: 0.11,
-  subway: 0.10,
+  subway: 0.10, 
   bicycling: 0.0,
   walking: 0.0,
   "e-bike": 0.024,
-  "e-scooter": 0.12
+  "e-scooter": 0.12 
 };
 
 app.get("/", (req, res) => {
