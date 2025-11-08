@@ -60,6 +60,44 @@ app.get("/api/routes", async (req, res) => {
       }
     }
 
+    let suggestion = null;
+    if (results.length > 1) {
+      const sortedByCarbon = [...results].sort((a, b) => a.carbon_kg - b.carbon_kg);
+      const sortedByTime = [...results].sort((a, b) => a.duration_min - b.duration_min);
+
+      const highestCarbon = sortedByCarbon[sortedByCarbon.length - 1];
+      const lowestCarbon = sortedByCarbon[0];
+      const fastest = sortedByTime[0];
+
+      // lower-carbon alternative if highest
+      const nearTimeAlternatives = results
+        .filter(r => r.mode !== fastest.mode)
+        .map(r => ({
+          ...r,
+          timeDiffPercent: Math.abs((r.duration_min - fastest.duration_min) / fastest.duration_min)
+        }))
+        .filter(r => r.timeDiffPercent <= 0.15 && r.carbon_kg < fastest.carbon_kg) // within 15% travel time
+        .sort((a, b) => a.timeDiffPercent - b.timeDiffPercent);
+
+      if (nearTimeAlternatives.length > 0) {
+        const bestAlt = nearTimeAlternatives[0];
+        const saved = (fastest.carbon_kg - bestAlt.carbon_kg).toFixed(2);
+        suggestion = `You could save ${saved} kg of CO₂ by taking ${bestAlt.mode} — it'll get you there in about the same time as ${fastest.mode}.`;
+      }
+
+      // similar travel time, but lower emissions
+      const nearFastAlternatives = results.filter(r =>
+        r.mode !== fastest.mode && r.duration_min <= fastest.duration_min * 1.1 && r.carbon_kg < fastest.carbon_kg
+      );
+      if (nearFastAlternatives.length > 0) {
+        const better = nearFastAlternatives[0];
+        const saved = (fastest.carbon_kg - better.carbon_kg).toFixed(2);
+        suggestion = suggestion ||
+          `You could arrive in nearly the same time using ${better.mode}, saving ${saved} kg of CO₂.`;
+      }
+    }
+
+
 
     res.json(results);
   } catch (err) {
