@@ -17,7 +17,7 @@ const routeColors = {
   driving: '#EA4335',    // Red
   bus: '#9C27B0',        // Purple
   tram: '#00BCD4',       // Cyan
-  subway: '#FF1744',     // Deep Pink
+  subway: '#795548',     // Brown - distinct from driving red
   bicycling: '#34A853',  // Green
   'e-bike': '#FF6F00',   // Orange
   'e-scooter': '#FBBC04' // Yellow
@@ -86,6 +86,15 @@ async function handleRouteChange() {
         displayRouteByMode(route.mode, route.polyline);
       }
     });
+
+    // Auto-zoom and center map to fit all routes
+    if (routes.length > 0 && routes[0].bounds) {
+      const bounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(routes[0].bounds.southwest.lat, routes[0].bounds.southwest.lng),
+        new google.maps.LatLng(routes[0].bounds.northeast.lat, routes[0].bounds.northeast.lng)
+      );
+      map.fitBounds(bounds);
+    }
 
     // Populate transport options panel with mode buttons
     populateTransportOptions(routes);
@@ -202,10 +211,11 @@ function createModeButton(route) {
   button.style.cssText = `
     padding: 12px;
     margin: 8px 0;
-    border: 2px solid ${routeColors[route.mode]};
+    border: 3px solid ${routeColors[route.mode]};
     border-radius: 8px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    background: white;
   `;
 
   // Icon mapping
@@ -220,9 +230,9 @@ function createModeButton(route) {
     'e-scooter': '🛴'
   };
 
-  // Build button content
+  // Build button content with mode color matching the map line
   button.innerHTML = `
-    <div style="font-weight: bold; margin-bottom: 4px;">
+    <div style="font-weight: bold; margin-bottom: 4px; color: ${routeColors[route.mode]};">
       ${icons[route.mode] || '🚶'} ${route.mode.charAt(0).toUpperCase() + route.mode.slice(1)}
     </div>
     <div style="font-size: 12px; color: #666;">
@@ -265,6 +275,16 @@ function selectMode(mode) {
 
   // Hide all polylines except selected one
   hideAllPolylinesExcept(mode);
+
+  // Auto-zoom to fit the selected route
+  const selectedRoute = allRoutesData.find(r => r.mode === mode);
+  if (selectedRoute && selectedRoute.bounds) {
+    const bounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(selectedRoute.bounds.southwest.lat, selectedRoute.bounds.southwest.lng),
+      new google.maps.LatLng(selectedRoute.bounds.northeast.lat, selectedRoute.bounds.northeast.lng)
+    );
+    map.fitBounds(bounds);
+  }
 
   // Refresh UI to show back button + detailed view
   populateTransportOptions(allRoutesData);
@@ -351,6 +371,16 @@ function showDetailedModeView(mode, routes) {
   backButton.addEventListener('click', () => {
     selectedMode = null; // Reset state
     showAllRoutes(); // Show all polylines again
+
+    // Re-fit map to show all routes
+    if (allRoutesData.length > 0 && allRoutesData[0].bounds) {
+      const bounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(allRoutesData[0].bounds.southwest.lat, allRoutesData[0].bounds.southwest.lng),
+        new google.maps.LatLng(allRoutesData[0].bounds.northeast.lat, allRoutesData[0].bounds.northeast.lng)
+      );
+      map.fitBounds(bounds);
+    }
+
     populateTransportOptions(allRoutesData); // Refresh UI
   });
   transportInfo.appendChild(backButton);
