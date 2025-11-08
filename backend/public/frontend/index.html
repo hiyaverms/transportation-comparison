@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Draggable Route + Input Addresses</title>
+    <style>
+        /* Wrap both map and overlays */
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        #info-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            z-index: 5;
+            font-family: sans-serif;
+        }
+
+        #info-panel input {
+            width: 200px;
+            margin-bottom: 5px;
+        }
+
+        #overlay-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            font-family: "Roboto", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            z-index: 10;
+            width: 280px;
+            max-height: 200px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        #overlay-panel.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+        }
+
+        /* Toggle button styling */
+        #toggle-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 10px;
+            background: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 11;
+            transition: background 0.2s ease;
+        }
+
+        #toggle-overlay:hover {
+            background: #005fcc;
+        }
+
+        #transport-panel {
+            position: absolute;
+            top: 60px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 14px 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            font-family: "Roboto", sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            z-index: 10;
+            width: 280px;
+            max-height: 200px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        #transport-panel.hidden {
+            opacity: 0;
+            transform: translateY(15px);
+            pointer-events: none;
+        }
+
+        /* Toggle button styling */
+        #toggle-transport {
+            position: absolute;
+            top: 20px;
+            right: 10px;
+            background: #0078ff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 11;
+            transition: background 0.2s ease;
+        }
+
+        #toggle-overlay:hover {
+            background: #005fcc;
+        }
+    </style>
+</head>
+<body>
+<div id="map-container">
+    <div id="map"></div>
+
+  
+  <div id="info-panel">
+        <div>
+            <label>Start: </label>
+            <input id="start-input" placeholder="Enter start location" />
+        </div>
+        <div>
+            <label>End: </label>
+            <input id="end-input" placeholder="Enter end location" />
+        </div>
+            <p><strong>Current Start:</strong> <span id="start-location"></span></p>
+            <p><strong>Current End:</strong> <span id="end-location"></span></p>
+        </div>
+
+    <div id="overlay-panel" class="hidden">
+        <h3>Directions</h3>
+        <div id="overlay-content">Loading route info...</div>
+    </div>
+        <button id="toggle-overlay">Show Directions</button>
+    </div>
+
+    <div id="transport-panel">
+        <h3>Directions</h3>
+        <div id="transport-info">Loading transport options...</div>
+    </div>
+        <button id="toggle-transport">Hide Options</button>
+    </div>
+
+  <div id="directions-panel"></div>
+
+  <!-- Load your JavaScript code -->
+  <script src="script.js"></script>
+</body>
+</html>

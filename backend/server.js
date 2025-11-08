@@ -10,8 +10,15 @@ app.use(cors());
 app.use(express.json());
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;;
 
+//serves frontend static files from backend/public
+const publicPath = path.join(process.cwd(), "public");
+app.use(express.static(publicPath));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicPath, "index.html"));
+});
 
 const MODES = [
   "driving",
@@ -36,9 +43,6 @@ const EMISSIONS_FACTORS = {
   "e-scooter": 0.12 
 };
 
-app.get("/", (req, res) => {
-  res.json({ message: "Transport Compare API is running" });
-});
 
 app.get("/api/routes", async (req, res) => {
   try {
