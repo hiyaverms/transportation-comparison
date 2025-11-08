@@ -47,10 +47,14 @@ app.get("/api/routes", async (req, res) => {
 
       if (data.routes && data.routes.length > 0) {
         const leg = data.routes[0].legs[0];
+        // e-bike: 1.5x slower than car, e-scooter: 1.6x slower than e-bike
+        let durationMultiplier = 1;
+        if (mode === "e-bike") durationMultiplier = 1.5;
+        if (mode === "e-scooter") durationMultiplier = 1.5 * 1.6;
         results.push({
           mode,
           distance_km: leg.distance.value / 1000,
-          duration_min: leg.duration.value / 60,
+          duration_min: (leg.duration.value / 60) * durationMultiplier,
           carbon_kg: (leg.distance.value / 1000) * (EMISSIONS_FACTORS[mode] || 0),
         });
       }
