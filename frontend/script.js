@@ -1,68 +1,103 @@
-let directionsRenderer, directionsService;
+async function loadMap() {
+  try {
+    const res = await fetch("http://localhost:8080/api/key");
+    const data = await res.json();
+    const GOOGLE_API_KEY = data.key;
+    console.log("Fetched Google API Key:", GOOGLE_API_KEY);
+
+    const script = document.createElement("script");
+    console.log("attempting to use: ", GOOGLE_API_KEY);
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&callback=initMap`;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  } catch (err) {
+    console.error("Failed to load Google Maps:", err);
+  }
+}
+
+// Kick it off
+loadMap();
+
+let map, directionsService, directionsRenderer, geocoder;
+let startMarker, endMarker;
 
 function initMap() {
   const boston = { lat: 42.3601, lng: -71.0589 };
   const cambridge = { lat: 42.3736, lng: -71.1097 };
 
-  // Initialize map
-  const map = new google.maps.Map(document.getElementById("map"), {
+  map = new google.maps.Map(document.getElementById("map"), {
     zoom: 13,
-    center: boston,
+    center: boston
   });
 
-  // Add markers
-  new google.maps.Marker({ position: boston, map, title: "Boston" });
-  new google.maps.Marker({ position: boston, map, title: "Allston" });
-
-  // Directions setup
   directionsService = new google.maps.DirectionsService();
   directionsRenderer = new google.maps.DirectionsRenderer({
-    map: map,
-    draggable: false,
-    suppressMarkers: true
+    map: map, 
+    suppressMarkers: true,
+    panel: document.getElementById("directions-panel")
+});
+  geocoder = new google.maps.Geocoder();
+
+  // Create draggable markers
+  startMarker = new google.maps.Marker({ position: boston, map, draggable: true });
+  endMarker = new google.maps.Marker({ position: cambridge, map, draggable: true });
+
+  // Update route and locations when dragged
+  startMarker.addListener("dragend", () => { calculateRoute(); updateLocation(startMarker, "start-location"); });
+  endMarker.addListener("dragend", () => { calculateRoute(); updateLocation(endMarker, "end-location"); });
+
+  // Initial route and locations
+  calculateRoute();
+  updateLocation(startMarker, "start-location");
+  updateLocation(endMarker, "end-location");
+
+  // Input boxes
+  const startInput = document.getElementById("start-input");
+  const endInput = document.getElementById("end-input");
+
+  startInput.addEventListener("change", () => { geocodeAddress(startInput.value, startMarker, "start-location"); });
+  endInput.addEventListener("change", () => { geocodeAddress(endInput.value, endMarker, "end-location"); });
+}
+
+function calculateRoute() {
+  directionsService.route({
+    origin: startMarker.getPosition(),
+    destination: endMarker.getPosition(),
+    travelMode: google.maps.TravelMode.DRIVING
+  }, (result, status) => {
+    if (status === "OK") directionsRenderer.setDirections(result);
+    else console.error("Directions request failed:", status);
   });
+}
 
-  // Request route
-  directionsService.route(
-    {
-      origin: boston,
-      destination: cambridge,
-      travelMode: google.maps.TravelMode.DRIVING,
-    },
-    (result, status) => {
-      if (status === "OK") {
-        directionsRenderer.setDirections(result);
-
-        // Display summary in overlay
-        const route = result.routes[0].legs[0];
-        document.getElementById("route-summary").textContent =
-          `Distance: ${route.distance.text}, Duration: ${route.duration.text}`;
+function updateLocation(marker, elementId) {
+  geocoder.geocode({ location: marker.getPosition() },
+    (results, status) => {
+      let display;
+      if (status === "OK" && results[0]) {
+        display = results[0].formatted_address;
       } else {
-        console.error("Directions request failed: " + status);
+        display = marker.getPosition().toUrlValue(6); // fallback to "lat,lng"
       }
+      document.getElementById(elementId).textContent = display;
     }
   );
+}
 
-  // Info panel toggle
-  const toggleBtn = document.getElementById("toggle-panel");
-  const infoPanel = document.getElementById("info-panel");
-  toggleBtn.addEventListener("click", () => {
-    infoPanel.classList.toggle("hidden");
-  });
-
-  // Map control button to toggle route
-  const mapControlDiv = document.createElement("div");
-  mapControlDiv.classList.add("map-control-button");
-  mapControlDiv.innerHTML = "Toggle Route";
-
-  map.controls[google.maps.ControlPosition.TOP_LEFT].push(mapControlDiv);
-
-  mapControlDiv.addEventListener("click", () => {
-    const container = directionsRenderer.getContainer();
-    if (container.style.display === "none") {
-      container.style.display = "block";
+function geocodeAddress(address, marker, elementId) {
+  geocoder.geocode({ address: address }, (results, status) => {
+    if (status === "OK" && results[0]) {
+      const location = results[0].geometry.location;
+      marker.setPosition(location);
+      map.panTo(location);
+      updateLocation(marker, elementId);
+      calculateRoute();
     } else {
-      container.style.display = "none";
+      alert("Address not found: " + status);
     }
   });
 }
+
+// Important for Google Maps callback to find initMap
+window.initMap = initMap;
