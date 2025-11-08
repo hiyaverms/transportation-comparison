@@ -13,14 +13,26 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 const PORT = 8080;
 
 
-const MODES = ["driving", "transit", "bicycling", "walking", "e-bike", "e-scooter"];
+const MODES = [
+  "driving",
+  "bus",
+  "tram",
+  "subway",
+  "bicycling",
+  "walking",
+  "e-bike",
+  "e-scooter"
+];
 
-const EMISSIONS_FACTORS = { 
-  driving: 0.18,    
-  transit: 1.3,
+// update emission factors for bus tram and subway(kg CO₂ / km)
+const EMISSIONS_FACTORS = {
+  driving: 0.18,
+  bus: 0.082,
+  tram: 0.041,
+  subway: 0.054,
   bicycling: 0.0,
   walking: 0.0,
-  "e-bike": 0.024, 
+  "e-bike": 0.024,
   "e-scooter": 0.12
 };
 
@@ -42,16 +54,27 @@ app.get("/api/routes", async (req, res) => {
 
     for (const mode of MODES) {
       try {
-        // e-bike & e-scooter use driving
-        const actualMode = ["e-bike", "e-scooter"].includes(mode) ? "driving" : mode;
+        let actualMode = mode;
+        let transitModeParam = "";
 
-      // Build base URL
-      let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&mode=${actualMode}&key=${GOOGLE_API_KEY}`;
+        // e-bike and e-scooter
+        if (["e-bike", "e-scooter"].includes(mode)) {
+          actualMode = "driving";
+        }
 
-      // Add traffic parameters for driving-based modes
-      if (actualMode === "driving") {
-        url += `&departure_time=${departureTime}&traffic_model=best_guess`;
-      }
+        // bus/train/subway as transit submodes
+        if (["bus", "tram", "subway"].includes(mode)) {
+          actualMode = "transit";
+          transitModeParam = `&transit_mode=${mode}`;
+        }
+
+        let url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
+          origin
+        )}&destination=${encodeURIComponent(destination)}&mode=${actualMode}${transitModeParam}&key=${GOOGLE_API_KEY}`;
+
+        if (actualMode === "driving") {
+          url += `&departure_time=${departureTime}&traffic_model=best_guess`;
+        }
 
       const response = await axios.get(url);
       const data = response.data;
@@ -83,6 +106,8 @@ app.get("/api/routes", async (req, res) => {
           bounds,
           has_traffic_data: hasTrafficData
         });
+      } else {
+        console.warn(`No routes found for mode ${mode}`);
       }
       } catch (modeError) {
         console.error(`Error fetching route for mode ${mode}:`, modeError.message);
