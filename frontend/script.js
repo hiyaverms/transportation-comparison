@@ -19,7 +19,7 @@ async function loadMap() {
 // Kick it off
 loadMap();
 
-let map, directionsService, directionsRenderer, geocoder;
+let map, geocoder;
 let startMarker, endMarker;
 
 function initMap() {
@@ -31,12 +31,6 @@ function initMap() {
     center: boston
   });
 
-  directionsService = new google.maps.DirectionsService();
-  directionsRenderer = new google.maps.DirectionsRenderer({
-    map: map, 
-    suppressMarkers: true,
-    panel: document.getElementById("directions-panel")
-});
   geocoder = new google.maps.Geocoder();
 
   // Create draggable markers
@@ -44,11 +38,16 @@ function initMap() {
   endMarker = new google.maps.Marker({ position: cambridge, map, draggable: true });
 
   // Update route and locations when dragged
-  startMarker.addListener("dragend", () => { calculateRoute(); updateLocation(startMarker, "start-location"); });
-  endMarker.addListener("dragend", () => { calculateRoute(); updateLocation(endMarker, "end-location"); });
+  startMarker.addListener("dragend", () => { 
+    updateLocation(startMarker, "start-location"); 
+    sendLocationsToBackend();
+});
+  endMarker.addListener("dragend", () => { 
+    updateLocation(endMarker, "end-location");
+    sendLocationsToBackend(); 
+});
 
   // Initial route and locations
-  calculateRoute();
   updateLocation(startMarker, "start-location");
   updateLocation(endMarker, "end-location");
 
@@ -58,17 +57,6 @@ function initMap() {
 
   startInput.addEventListener("change", () => { geocodeAddress(startInput.value, startMarker, "start-location"); });
   endInput.addEventListener("change", () => { geocodeAddress(endInput.value, endMarker, "end-location"); });
-}
-
-function calculateRoute() {
-  directionsService.route({
-    origin: startMarker.getPosition(),
-    destination: endMarker.getPosition(),
-    travelMode: google.maps.TravelMode.DRIVING
-  }, (result, status) => {
-    if (status === "OK") directionsRenderer.setDirections(result);
-    else console.error("Directions request failed:", status);
-  });
 }
 
 function updateLocation(marker, elementId) {
@@ -92,12 +80,50 @@ function geocodeAddress(address, marker, elementId) {
       marker.setPosition(location);
       map.panTo(location);
       updateLocation(marker, elementId);
-      calculateRoute();
+      sendLocationsToBackend();
     } else {
       alert("Address not found: " + status);
     }
   });
 }
+
+async function sendLocationsToBackend() {
+  if (!startMarker || !endMarker) return;
+
+  const start = startMarker.getPosition().toJSON();
+  const end = endMarker.getPosition().toJSON();
+
+  try {
+    const response = await fetch("http://localhost:8080/api/locations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ start, end })
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const data = await response.json();
+    console.log("Backend response:", data);
+  } catch (err) {
+    console.error("Failed to send locations:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const overlay = document.getElementById("overlay-panel");
+  const toggleButton = document.getElementById("toggle-overlay");
+
+  if (overlay && toggleButton) {
+    toggleButton.addEventListener("click", () => {
+      const isHidden = overlay.classList.toggle("hidden");
+      toggleButton.textContent = isHidden ? "Show Directions" : "Hide Directions";
+    });
+  } else {
+    console.warn("Overlay or toggle button not found in DOM");
+  }
+});
 
 // Important for Google Maps callback to find initMap
 window.initMap = initMap;
